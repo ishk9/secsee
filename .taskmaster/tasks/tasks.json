@@ -1,0 +1,1195 @@
+{
+  "tasks": [
+    {
+      "id": 1,
+      "title": "Initialize TypeScript Project & Install Dependencies",
+      "description": "Set up the Node.js/TypeScript project with all required dependencies, configure tsconfig.json for strict mode with ES2022 target, set up the module structure from LLD Section 4, create package.json with bin entry for `secsee` CLI, and configure build scripts.",
+      "status": "pending",
+      "dependencies": [],
+      "priority": "high",
+      "details": "Create the project at the root. Use `npm init -y`, then install all production and dev dependencies. Configure tsconfig.json and create the full src/ directory structure per LLD Section 4.",
+      "testStrategy": "Run `npm run build` — must compile with zero errors. Run `npx secsee --help` — must show CLI help. Verify all directories exist.",
+      "subtasks": [
+        {
+          "id": "1.1",
+          "title": "Run npm init and configure package.json",
+          "description": "Run `npm init -y` in project root. Update package.json: set name to 'secsee', version '0.1.0', description 'AI-powered E2E integration tester via MCP', main 'dist/index.js', types 'dist/index.d.ts'. Add bin entry: { \"secsee\": \"./dist/cli.js\" }. Add scripts: \"build\": \"tsc\", \"dev\": \"tsx watch src/index.ts\", \"start\": \"node dist/index.js\", \"cli\": \"tsx src/cli.ts\". Set type to 'module'. Set engines: { \"node\": \">=20.0.0\" }. Add files: [\"dist/\"].",
+          "status": "pending",
+          "dependencies": []
+        },
+        {
+          "id": "1.2",
+          "title": "Install production dependencies",
+          "description": "npm install @modelcontextprotocol/sdk zod commander dockerode playwright ts-morph @babel/parser pg mysql2 mongodb js-yaml. These are the core runtime dependencies: MCP SDK for server protocol, zod for schema validation, commander for CLI, dockerode for Docker API, playwright for browser automation, ts-morph for TypeScript AST parsing, @babel/parser for JavaScript AST, pg/mysql2/mongodb for DB verification, js-yaml for docker-compose parsing.",
+          "status": "pending",
+          "dependencies": ["1.1"]
+        },
+        {
+          "id": "1.3",
+          "title": "Install dev dependencies",
+          "description": "npm install -D typescript @types/node @types/pg @types/js-yaml tsx vitest. TypeScript compiler, Node.js types, tsx for development (watch mode without build), vitest for unit testing.",
+          "status": "pending",
+          "dependencies": ["1.1"]
+        },
+        {
+          "id": "1.4",
+          "title": "Configure tsconfig.json",
+          "description": "Create tsconfig.json with: { \"compilerOptions\": { \"target\": \"ES2022\", \"module\": \"NodeNext\", \"moduleResolution\": \"NodeNext\", \"strict\": true, \"outDir\": \"dist\", \"rootDir\": \"src\", \"declaration\": true, \"declarationMap\": true, \"sourceMap\": true, \"esModuleInterop\": true, \"skipLibCheck\": true, \"forceConsistentCasingInFileNames\": true, \"resolveJsonModule\": true }, \"include\": [\"src/**/*\"], \"exclude\": [\"node_modules\", \"dist\"] }.",
+          "status": "pending",
+          "dependencies": ["1.1"]
+        },
+        {
+          "id": "1.5",
+          "title": "Create full src/ directory structure per LLD Section 4",
+          "description": "Create all directories: src/, src/server/, src/server/tools/, src/analyzer/, src/analyzer/strategies/, src/analyzer/visitors/, src/docker/, src/tester/, src/tester/api/, src/tester/api/validators/, src/tester/frontend/, src/db/, src/report/, src/config/, src/types/, src/utils/. Create placeholder index.ts files in each directory with empty exports.",
+          "status": "pending",
+          "dependencies": ["1.4"]
+        },
+        {
+          "id": "1.6",
+          "title": "Create entry point files (src/index.ts, src/cli.ts)",
+          "description": "Create src/index.ts with minimal MCP server bootstrap (just a console.error('SecSee starting...')). Create src/cli.ts with shebang #!/usr/bin/env node and minimal commander setup that shows --help. Verify `npm run build` compiles both. Verify `node dist/cli.js --help` shows output.",
+          "status": "pending",
+          "dependencies": ["1.5"]
+        },
+        {
+          "id": "1.7",
+          "title": "Create .gitignore and .npmignore",
+          "description": "Create .gitignore with: node_modules/, dist/, .secsee/test-report.*, .secsee/screenshots/, .secsee/working.md, .secsee/working.json, .env, *.tgz. Create .npmignore with: src/, .taskmaster/, docs/, .secsee/, tests/, *.test.ts.",
+          "status": "pending",
+          "dependencies": ["1.1"]
+        },
+        {
+          "id": "1.8",
+          "title": "Verify build and CLI smoke test",
+          "description": "Run `npm run build` — must compile with zero TypeScript errors. Run `node dist/cli.js --help` — must display secsee command help. Run `npm pack` — must create a valid tarball. Verify all files in dist/ match src/ structure.",
+          "status": "pending",
+          "dependencies": ["1.6", "1.7"]
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "title": "Define All Shared TypeScript Interfaces & Types",
+      "description": "Create src/types/index.ts with all shared interfaces from LLD Section 3.",
+      "status": "pending",
+      "dependencies": [1],
+      "priority": "high",
+      "details": "Implement every interface from LLD Sections 3.1, 3.2, 3.3.",
+      "testStrategy": "TypeScript compiles with zero errors. Import all types in a test file and instantiate mock objects.",
+      "subtasks": [
+        {
+          "id": "2.1",
+          "title": "Define EndpointDefinition and related types (LLD 3.1)",
+          "description": "In src/types/index.ts: Define HttpMethod type ('GET'|'POST'|'PUT'|'PATCH'|'DELETE'). Define SchemaField interface with type ('string'|'number'|'boolean'|'object'|'array'), required (boolean), example (any), children (Record<string, SchemaField>). Define AuthScheme type with kind ('jwt'|'api-key'|'session'|'oauth2'|'basic'), headerName (string), tokenPrefix (string). Define DbInteraction with table (string), operation ('create'|'read'|'update'|'delete'), fields (string[]), service (string). Define OutboundCall with targetUrl (string), method (HttpMethod), service (string), triggeredBy (string). Define EndpointDefinition per LLD 3.1 with all nested request/response schemas.",
+          "status": "pending",
+          "dependencies": []
+        },
+        {
+          "id": "2.2",
+          "title": "Define Test Result types (LLD 3.2)",
+          "description": "Define ApiTestResult with endpoint, method, status ('pass'|'fail'|'skip'|'error'), request object, expectedResponse, actualResponse (including latencyMs), dbValidation (passed boolean, diff), webhookValidation, validationErrors string[]. Define PageTestResult with url, normalizedUrl, depth, screenshot path, interactiveElements (ElementInfo[]), formsFound (FormInfo[]), formTestResults (FormTestResult[]), networkRequests (NetworkEntry[]), networkValidation (NetworkValidationResult[]), consoleErrors (string[]), loadTimeMs. Define NetworkEntry with url, method, headers, postData, responseStatus, responseHeaders, responseBody, timestamp, type. Define FormInfo with action, method, fields array of {name, type, required, placeholder}. Define ElementInfo with tag, selector, text, href, type. Define FormTestResult with formInfo, dataSubmitted, networkRequest, networkResponse, validationErrors, passed.",
+          "status": "pending",
+          "dependencies": []
+        },
+        {
+          "id": "2.3",
+          "title": "Define Configuration types (LLD 3.3)",
+          "description": "Define SecseeConfig per LLD 3.3 with dockerComposePath, frontendUrl, services (ServiceConfig[]), testCredentials, excludePaths, crawl config (maxDepth, maxPages, waitForNetworkIdle, screenshotOnEveryPage), timeout, browser ('chromium'|'firefox'|'webkit'), parallel, db (DbConnectionConfig[]). Define ServiceConfig with name, path, framework, type ('backend'|'frontend'|'database'), port, baseUrl. Define DbConnectionConfig with type ('postgres'|'mysql'|'mongodb'), connectionString, name.",
+          "status": "pending",
+          "dependencies": []
+        },
+        {
+          "id": "2.4",
+          "title": "Define Crawler, Docker, Validation, and Report types",
+          "description": "Define CrawlState with queue (CrawlTarget[]), visited (Set<string>), results (PageTestResult[]), networkLog (NetworkEntry[]). Define CrawlTarget with url, normalizedUrl, depth, referrer, elementSelector. Define ContainerState per LLD 2.4 with name, status enum, port, healthCheckAttempts, error. Define ValidationContext with endpoint, request, response, dbBefore (DbSnapshot), dbAfter (DbSnapshot). Define ValidationResult with validatorName, passed, message, details. Define DbSnapshot with table, rows (Record<string,any>[]), timestamp. Define DbDiff with inserted, deleted, modified arrays. Define TestReport with summary, apiResults, frontendResults, networkValidation, issues, generatedAt. Define Issue with severity ('critical'|'high'|'medium'|'low'), message, endpoint, page, details. Define Screenshot with path, url, timestamp. Define NetworkValidationResult with networkEntry, contract (EndpointDefinition), passed, mismatches (string[]).",
+          "status": "pending",
+          "dependencies": []
+        },
+        {
+          "id": "2.5",
+          "title": "Define ProjectAnalysis aggregate type",
+          "description": "Define ProjectAnalysis as the top-level output of the analyzer: { projectRoot: string, services: ServiceAnalysis[], discoveredAt: number }. Define ServiceAnalysis with name, path, framework, type, endpoints (EndpointDefinition[]), dbInteractions (DbInteraction[]), outboundCalls (OutboundCall[]), authScheme (AuthScheme | null). This is the type that feeds into working.md generation and test generation.",
+          "status": "pending",
+          "dependencies": ["2.1", "2.2"]
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "title": "Implement Configuration System with Zod Validation",
+      "description": "Build src/config/schema.ts with Zod schemas and src/config/loader.ts for config file management.",
+      "status": "pending",
+      "dependencies": [2],
+      "priority": "high",
+      "details": "Zod schemas mirroring SecseeConfig. Loader reads .secsee/config.json, validates, provides defaults.",
+      "testStrategy": "Unit test: loadConfig with valid/invalid/missing JSON.",
+      "subtasks": [
+        {
+          "id": "3.1",
+          "title": "Define Zod schemas in src/config/schema.ts",
+          "description": "Import z from 'zod'. Define DbConnectionConfigSchema: z.object({ type: z.enum(['postgres','mysql','mongodb']), connectionString: z.string(), name: z.string() }). Define ServiceConfigSchema: z.object({ name: z.string(), path: z.string(), framework: z.string().optional(), type: z.enum(['backend','frontend','database']), port: z.number().optional(), baseUrl: z.string().optional() }). Define CrawlConfigSchema: z.object({ maxDepth: z.number().default(10), maxPages: z.number().default(100), waitForNetworkIdle: z.boolean().default(true), screenshotOnEveryPage: z.boolean().default(true) }). Define SecseeConfigSchema: z.object({ dockerComposePath: z.string().default('docker-compose.yml'), frontendUrl: z.string().url(), services: z.array(ServiceConfigSchema).default([]), testCredentials: z.object({ username: z.string(), password: z.string() }).optional(), excludePaths: z.array(z.string()).default([]), crawl: CrawlConfigSchema.default({}), timeout: z.number().default(30000), browser: z.enum(['chromium','firefox','webkit']).default('chromium'), parallel: z.number().default(1), db: z.array(DbConnectionConfigSchema).default([]) }). Export all schemas and inferred types.",
+          "status": "pending",
+          "dependencies": []
+        },
+        {
+          "id": "3.2",
+          "title": "Implement config loader in src/config/loader.ts",
+          "description": "Import fs/promises, path, and SecseeConfigSchema. Function `async loadConfig(projectRoot: string): Promise<SecseeConfig>`: construct configPath as path.join(projectRoot, '.secsee', 'config.json'). Try to read file with fs.readFile. If file not found (ENOENT), return SecseeConfigSchema.parse({ frontendUrl: 'http://localhost:3000' }) as default. If file exists, JSON.parse the content, run through SecseeConfigSchema.parse() which applies defaults and validates. Catch ZodError and rethrow with human-readable message including field paths. Export loadConfig.",
+          "status": "pending",
+          "dependencies": ["3.1"]
+        },
+        {
+          "id": "3.3",
+          "title": "Implement initConfig for project initialization",
+          "description": "Function `async initConfig(projectRoot: string): Promise<void>`: Create .secsee/ directory if not exists. Write default config.json with commented descriptions (as a clean JSON with all fields showing defaults). Check if .gitignore exists — if yes, append '.secsee/test-report.*', '.secsee/screenshots/', '.secsee/working.md' if not already present. If .gitignore doesn't exist, create it with those entries. Print 'Initialized .secsee/config.json — edit to configure your project.'",
+          "status": "pending",
+          "dependencies": ["3.1"]
+        },
+        {
+          "id": "3.4",
+          "title": "Write unit tests for config system",
+          "description": "Using vitest: Test loadConfig with valid config file returns typed object with correct values. Test loadConfig with partial config applies defaults (e.g., missing crawl config gets defaults). Test loadConfig with invalid field throws ZodError. Test loadConfig with missing file returns defaults. Test initConfig creates directory and file. Test initConfig appends to existing .gitignore without duplicating entries.",
+          "status": "pending",
+          "dependencies": ["3.2", "3.3"]
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "title": "Build MCP Server Core with StdioServerTransport",
+      "description": "Implement the MCP server entry point using McpServer from @modelcontextprotocol/sdk with StdioServerTransport.",
+      "status": "pending",
+      "dependencies": [3],
+      "priority": "high",
+      "details": "Use McpServer class, register tools with Zod input schemas, connect via StdioServerTransport.",
+      "testStrategy": "Server starts on stdio. MCP inspector returns all 9 tools.",
+      "subtasks": [
+        {
+          "id": "4.1",
+          "title": "Implement createServer() in src/server/mcp-server.ts",
+          "description": "Import { McpServer } from '@modelcontextprotocol/sdk/server' and { z } from 'zod'. Create exported function createServer() that instantiates: const server = new McpServer({ name: 'secsee', version: '0.1.0' }, { capabilities: { logging: {} } }). Return server. This function will be called by both the stdio entry point and tests.",
+          "status": "pending",
+          "dependencies": []
+        },
+        {
+          "id": "4.2",
+          "title": "Register all 9 placeholder MCP tools",
+          "description": "In createServer(), register tools using server.registerTool(name, { description, inputSchema }, handler). Tools to register: (1) analyze_project — inputSchema: z.object({ projectRoot: z.string().describe('Absolute path to project root') }). (2) spin_up_services — same input. (3) tear_down_services — input + removeVolumes: z.boolean().optional(). (4) test_apis — same input. (5) test_frontend — input + headed: z.boolean().optional(). (6) test_single_endpoint — input + path: z.string(), method: z.string(). (7) test_page — input + url: z.string(). (8) generate_report — input + format: z.enum(['markdown','json','both']).optional(). (9) update_working_doc — same input. Each handler returns { content: [{ type: 'text', text: 'Not implemented yet' }] } as placeholder.",
+          "status": "pending",
+          "dependencies": ["4.1"]
+        },
+        {
+          "id": "4.3",
+          "title": "Implement stdio entry point in src/index.ts",
+          "description": "Import { StdioServerTransport } from '@modelcontextprotocol/sdk/server'. Import createServer from './server/mcp-server.js'. Main function: create server via createServer(), create transport via new StdioServerTransport(), await server.connect(transport), console.error('SecSee MCP Server running on stdio'). Wrap in try/catch — on error, console.error and process.exit(1). Register process.on('SIGINT') and process.on('SIGTERM') for graceful shutdown (call server.close() if available, then process.exit(0)). IMPORTANT: All logging via console.error — stdout is reserved for JSON-RPC protocol messages.",
+          "status": "pending",
+          "dependencies": ["4.2"]
+        },
+        {
+          "id": "4.4",
+          "title": "Test MCP server starts and lists tools",
+          "description": "Verify: `npm run build` succeeds. Running `node dist/index.js` starts without crashing (exits cleanly on SIGINT). If MCP inspector available, connect and verify list_tools returns all 9 tools with correct names and schemas. Otherwise, write a simple test that imports createServer, creates it, and verifies tool count.",
+          "status": "pending",
+          "dependencies": ["4.3"]
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "title": "Build CLI Entry Point with Commander.js",
+      "description": "Implement src/cli.ts with commander.js providing subcommands mirroring MCP tools.",
+      "status": "pending",
+      "dependencies": [4],
+      "priority": "medium",
+      "details": "Commander subcommands: init, analyze, up, down, test, test:api, test:ui, report.",
+      "testStrategy": "secsee --help shows all commands. secsee init creates config.",
+      "subtasks": [
+        {
+          "id": "5.1",
+          "title": "Set up commander program with global options",
+          "description": "In src/cli.ts: Add shebang #!/usr/bin/env node. Import { Command } from 'commander'. Create: const program = new Command('secsee').version('0.1.0').description('AI-powered E2E integration tester'). Add global option: .option('-p, --project <path>', 'Project root directory', process.cwd()). Add global option: .option('-v, --verbose', 'Enable verbose logging', false).",
+          "status": "pending",
+          "dependencies": []
+        },
+        {
+          "id": "5.2",
+          "title": "Implement init command",
+          "description": "program.command('init').description('Initialize SecSee configuration in current project').action(async () => { const projectRoot = program.opts().project; await initConfig(projectRoot); console.log('SecSee initialized. Edit .secsee/config.json to configure.'); }). Import initConfig from '../config/loader.js'.",
+          "status": "pending",
+          "dependencies": ["5.1"]
+        },
+        {
+          "id": "5.3",
+          "title": "Implement analyze, up, down, test, test:api, test:ui, report commands",
+          "description": "Add all remaining commands as stubs that load config and print 'Not implemented yet — coming in Phase N': analyze (Phase 2), up/down (Phase 3), test:api (Phase 4), test:ui (Phase 5), test (Phase 4+5), report (Phase 6). Each command should: load config via loadConfig(program.opts().project), log the config loaded message, then print the stub. Add command aliases where useful: 'up' for spin-up, 'down' for tear-down.",
+          "status": "pending",
+          "dependencies": ["5.2"]
+        },
+        {
+          "id": "5.4",
+          "title": "Wire program.parse() and verify CLI works",
+          "description": "At bottom of cli.ts: program.parse(process.argv). Build and test: `node dist/cli.js --help` shows all commands. `node dist/cli.js init` creates .secsee/config.json. `node dist/cli.js analyze` prints stub message. Verify shebang works: `chmod +x dist/cli.js && ./dist/cli.js --help`.",
+          "status": "pending",
+          "dependencies": ["5.3"]
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "title": "Implement IFrameworkAnalyzer Interface & AnalyzerRegistry",
+      "description": "Create the analyzer interface and plugin registry from LLD Section 2.1 and 2.3.",
+      "status": "pending",
+      "dependencies": [2],
+      "priority": "high",
+      "details": "Strategy pattern interface with detect/extract methods. Registry with priority-based resolution.",
+      "testStrategy": "Register mock analyzers. resolve() returns highest priority. Throws on no match.",
+      "subtasks": [
+        {
+          "id": "6.1",
+          "title": "Define IFrameworkAnalyzer interface in src/analyzer/interface.ts",
+          "description": "Export interface IFrameworkAnalyzer with: name: string (e.g., 'express', 'fastapi'); detect(servicePath: string): Promise<boolean>; extractEndpoints(servicePath: string): Promise<EndpointDefinition[]>; extractDbInteractions(servicePath: string): Promise<DbInteraction[]>; extractOutboundCalls(servicePath: string): Promise<OutboundCall[]>; extractAuthScheme(servicePath: string): Promise<AuthScheme | null>. Import types from '../types/index.js'.",
+          "status": "pending",
+          "dependencies": []
+        },
+        {
+          "id": "6.2",
+          "title": "Implement AnalyzerRegistry class in src/analyzer/registry.ts",
+          "description": "Class AnalyzerRegistry: private analyzers: Array<{ analyzer: IFrameworkAnalyzer, priority: number }> = []. Method register(analyzer, priority): push and sort by priority descending. Method async resolve(servicePath): iterate analyzers, call analyzer.detect(servicePath), return first that returns true. If none match, throw new AnalyzerNotFoundError(servicePath). Method async resolveAll(servicePath): return all matching analyzers. Method getRegistered(): return analyzer names and priorities for debugging.",
+          "status": "pending",
+          "dependencies": ["6.1"]
+        },
+        {
+          "id": "6.3",
+          "title": "Create AnalyzerNotFoundError in src/utils/errors.ts",
+          "description": "Export class AnalyzerNotFoundError extends Error: constructor takes servicePath, sets message to `No analyzer found for service at: ${servicePath}`. Add property servicePath for programmatic access.",
+          "status": "pending",
+          "dependencies": []
+        },
+        {
+          "id": "6.4",
+          "title": "Create default registry singleton",
+          "description": "At bottom of registry.ts or in a separate src/analyzer/default-registry.ts: export const defaultRegistry = new AnalyzerRegistry(). Register built-in analyzers with priorities: ExpressAnalyzer (100), FastAPIAnalyzer (90), FlaskAnalyzer (80), GenericAnalyzer (0 — lowest, always matches). Import will be lazy — initially register only the analyzers that have been implemented.",
+          "status": "pending",
+          "dependencies": ["6.2"]
+        }
+      ]
+    },
+    {
+      "id": 7,
+      "title": "Implement Service Discovery & Project Scanner",
+      "description": "Build project scanning logic per LLD Section 5.1.",
+      "status": "pending",
+      "dependencies": [6],
+      "priority": "high",
+      "details": "Walk directories, detect services by markers, delegate to AnalyzerRegistry.",
+      "testStrategy": "Mock project with Express service and React frontend detected correctly.",
+      "subtasks": [
+        {
+          "id": "7.1",
+          "title": "Implement directory walker with framework detection",
+          "description": "In src/analyzer/scanner.ts: Function async scanProject(projectRoot, registry): Walk projectRoot recursively (max depth 3). Skip directories: node_modules, .git, dist, build, __pycache__, .venv, .next, .secsee, .taskmaster. For each directory, check for framework markers: (1) Read package.json if exists → check dependencies for 'express', '@nestjs/core', 'fastify', 'koa', 'hapi' (Node backends), 'react', 'vue', 'next', 'angular', '@sveltejs/kit' (frontends). (2) Read requirements.txt if exists → check for 'fastapi', 'flask', 'django'. (3) Read pyproject.toml if exists → same checks in [tool.poetry.dependencies]. (4) Check for Dockerfile → marks as deployable service. Return discovered ServiceInfo[] with name (dirname), path, detectedFramework, type guess.",
+          "status": "pending",
+          "dependencies": []
+        },
+        {
+          "id": "7.2",
+          "title": "Implement docker-compose.yml service matching",
+          "description": "If docker-compose.yml exists at projectRoot, parse it (js-yaml) and extract service names. Match compose service names to discovered directories by: exact name match, build context path match, or image name containing directory name. Enrich ServiceInfo with compose metadata: image, ports (host:container), environment variables, depends_on, healthcheck config. This helps map running containers back to service directories.",
+          "status": "pending",
+          "dependencies": ["7.1"]
+        },
+        {
+          "id": "7.3",
+          "title": "Integrate scanner with AnalyzerRegistry",
+          "description": "For each discovered service, call registry.resolve(servicePath). If resolved, attach the analyzer to ServiceInfo. If no analyzer found (AnalyzerNotFoundError), log warning and continue — don't fail the entire scan. Return ServiceInfo[] with optional analyzer attached. Function async analyzeProject(projectRoot, registry): calls scanProject, then for each service with an analyzer, runs all extract methods (endpoints, dbInteractions, outboundCalls, authScheme). Assembles and returns ProjectAnalysis.",
+          "status": "pending",
+          "dependencies": ["7.1"]
+        },
+        {
+          "id": "7.4",
+          "title": "Write unit tests for scanner",
+          "description": "Create a temp directory with: (1) an 'api' folder containing package.json with express dep → detected as Express backend. (2) a 'web' folder with package.json with react dep → detected as frontend. (3) a node_modules folder → must be skipped. (4) docker-compose.yml referencing 'api' and 'web' services. Verify scanProject returns 2 services with correct types. Verify compose matching enriches with ports.",
+          "status": "pending",
+          "dependencies": ["7.2", "7.3"]
+        }
+      ]
+    },
+    {
+      "id": 8,
+      "title": "Implement ExpressAnalyzer with ts-morph AST Parsing",
+      "description": "Build Express.js analyzer using ts-morph for AST traversal per LLD 2.1 and 2.2.",
+      "status": "pending",
+      "dependencies": [6],
+      "priority": "high",
+      "details": "Use ts-morph SyntaxKind.CallExpression to find app.get(), router.post(), etc.",
+      "testStrategy": "Parse sample Express app. All endpoints, DB calls, outbound calls extracted correctly.",
+      "subtasks": [
+        {
+          "id": "8.1",
+          "title": "Implement detect() for Express",
+          "description": "In src/analyzer/strategies/express.ts: Class ExpressAnalyzer implements IFrameworkAnalyzer. name = 'express'. Method detect(servicePath): Read package.json at servicePath. Check if 'express' exists in dependencies or devDependencies. Also check for '@types/express' in devDependencies as secondary signal. Return boolean.",
+          "status": "pending",
+          "dependencies": []
+        },
+        {
+          "id": "8.2",
+          "title": "Implement route extraction using ts-morph",
+          "description": "Method extractEndpoints(servicePath): Create ts-morph Project, add all .ts and .js files from servicePath (excluding node_modules, dist, test). For each SourceFile, call sourceFile.getDescendantsOfKind(SyntaxKind.CallExpression). Filter for calls where expression text matches patterns: 'app.get', 'app.post', 'app.put', 'app.delete', 'app.patch', 'router.get', 'router.post', 'router.put', 'router.delete', 'router.patch', 'app.use'. For each matched call: Extract method from the property name (get/post/put/delete/patch). Extract path from first argument — if StringLiteral, use getText(). If TemplateLiteral, extract template parts. Extract middleware names from middle arguments. Extract handler function (last argument). Build EndpointDefinition with method, path, source file info.",
+          "status": "pending",
+          "dependencies": ["8.1"]
+        },
+        {
+          "id": "8.3",
+          "title": "Implement request/response schema inference from handler body",
+          "description": "For each extracted handler function, analyze its body using ts-morph: Find req.body access → PropertyAccessExpression where expression is 'req' and name is 'body'. If destructured (const { name, email } = req.body), extract field names. Find req.params, req.query, req.headers access similarly. For response: find res.json(), res.send() calls and inspect argument shape. Find res.status() calls to infer status codes. Build request/response schemas as SchemaField records. Types are inferred as 'string' by default unless TypeScript type annotations are available.",
+          "status": "pending",
+          "dependencies": ["8.2"]
+        },
+        {
+          "id": "8.4",
+          "title": "Implement DB interaction detection",
+          "description": "Method extractDbInteractions(servicePath): Scan all files for ORM call patterns. Prisma: find calls like prisma.user.create(), prisma.post.findMany() — extract model name and operation. Sequelize: User.findAll(), User.create() patterns. Mongoose: User.find(), new User().save(). Knex: knex('users').select(), knex('users').insert(). Raw pg: pool.query('SELECT * FROM users') — extract table name from SQL string literal. For each, build DbInteraction with table, operation (map findAll→read, create→create, update→update, destroy/delete→delete).",
+          "status": "pending",
+          "dependencies": ["8.1"]
+        },
+        {
+          "id": "8.5",
+          "title": "Implement outbound call and auth detection",
+          "description": "Method extractOutboundCalls(servicePath): Find fetch() calls, axios.get/post/put/delete() calls, http.request() calls. Extract URL (first arg or config.url), method. Build OutboundCall. Method extractAuthScheme(servicePath): Look for: jwt/jsonwebtoken import → JWT scheme. passport import → OAuth/session scheme. Check middleware chain for auth-related names (authenticate, requireAuth, verifyToken). Check for Authorization header extraction in code. Return AuthScheme or null.",
+          "status": "pending",
+          "dependencies": ["8.1"]
+        },
+        {
+          "id": "8.6",
+          "title": "Write integration tests for ExpressAnalyzer",
+          "description": "Create a sample Express app in tests/fixtures/express-app/ with: 3 routes (GET /users, POST /users, DELETE /users/:id), Prisma DB calls, one fetch() outbound call, JWT auth middleware. Run ExpressAnalyzer against it. Verify: 3 endpoints extracted with correct method/path, DB interactions found, outbound call found, auth scheme detected as JWT.",
+          "status": "pending",
+          "dependencies": ["8.2", "8.3", "8.4", "8.5"]
+        }
+      ]
+    },
+    {
+      "id": 9,
+      "title": "Implement FastAPIAnalyzer with tree-sitter Python Parsing",
+      "description": "Build FastAPI analyzer using tree-sitter-python for Python AST parsing.",
+      "status": "pending",
+      "dependencies": [6],
+      "priority": "medium",
+      "details": "Parse Python decorators @app.get(), Pydantic models, SQLAlchemy patterns.",
+      "testStrategy": "Parse sample FastAPI app. Routes, Pydantic schemas, SQLAlchemy calls extracted.",
+      "subtasks": [
+        {
+          "id": "9.1",
+          "title": "Implement detect() for FastAPI",
+          "description": "Check for 'fastapi' in requirements.txt, Pipfile, or pyproject.toml [tool.poetry.dependencies] or [project.dependencies]. Also check for 'from fastapi import' in .py files as secondary signal.",
+          "status": "pending",
+          "dependencies": []
+        },
+        {
+          "id": "9.2",
+          "title": "Set up tree-sitter-python parser",
+          "description": "Initialize tree-sitter with Python grammar. Function parsePythonFile(filePath): read file content, create tree via parser.parse(content). Return the syntax tree. Handle encoding (UTF-8). Handle parse errors gracefully.",
+          "status": "pending",
+          "dependencies": []
+        },
+        {
+          "id": "9.3",
+          "title": "Extract FastAPI route decorators and function signatures",
+          "description": "Walk the tree-sitter AST. Find 'decorated_definition' nodes. Check if decorator matches @app.get/@app.post/@router.get etc. Extract route path from decorator arguments. Find the function definition below: extract parameter names and type annotations. Map type annotations to SchemaField types (str→string, int→number, bool→boolean). Detect Body(), Query(), Path() dependency injection parameters. Find Pydantic BaseModel subclasses for complex body schemas.",
+          "status": "pending",
+          "dependencies": ["9.2"]
+        },
+        {
+          "id": "9.4",
+          "title": "Extract DB calls, outbound HTTP, and auth patterns",
+          "description": "DB: Find SQLAlchemy patterns (session.query, session.add, session.commit), Tortoise ORM (Model.create, Model.filter), raw SQL. Outbound: Find httpx.get/post, requests.get/post, aiohttp calls. Auth: Find Depends(get_current_user), OAuth2PasswordBearer, APIKeyHeader imports and usage.",
+          "status": "pending",
+          "dependencies": ["9.2"]
+        },
+        {
+          "id": "9.5",
+          "title": "Write integration tests for FastAPIAnalyzer",
+          "description": "Create sample FastAPI app fixture with routes, Pydantic models, SQLAlchemy calls. Verify all extracted correctly.",
+          "status": "pending",
+          "dependencies": ["9.3", "9.4"]
+        }
+      ]
+    },
+    {
+      "id": 10,
+      "title": "Implement FlaskAnalyzer & GenericAnalyzer",
+      "description": "Flask analyzer for @app.route patterns, and generic regex fallback.",
+      "status": "pending",
+      "dependencies": [9],
+      "priority": "low",
+      "details": "Flask uses @app.route with methods=[]. Generic uses regex for any framework.",
+      "testStrategy": "Flask routes extracted. Generic finds routes via regex in unknown frameworks.",
+      "subtasks": [
+        {
+          "id": "10.1",
+          "title": "Implement FlaskAnalyzer",
+          "description": "Reuse tree-sitter-python parser from FastAPIAnalyzer. detect(): check for 'flask' in requirements.txt. extractEndpoints(): find @app.route('/path', methods=['GET']) and @blueprint.route() decorators. Extract path and methods from decorator kwargs. Find request.json, request.args, request.form access in function bodies. Find return jsonify() or make_response() for response shape.",
+          "status": "pending",
+          "dependencies": []
+        },
+        {
+          "id": "10.2",
+          "title": "Implement GenericAnalyzer (regex fallback)",
+          "description": "detect(): Always returns true (registered with priority 0). Uses regex patterns to find routes in any language: Pattern for URL paths near HTTP methods: /\\b(GET|POST|PUT|DELETE|PATCH)\\s+['\"](\\/[\\w\\/:{}]+)['\"]/. Pattern for common framework decorators: /@(Get|Post|Put|Delete)Mapping/, /\\[Http(Get|Post|Put|Delete)\\]/. Extract with lower confidence — set a 'confidence: low' flag on results. Useful for Spring Boot (if full Java analyzer not built) and .NET.",
+          "status": "pending",
+          "dependencies": []
+        },
+        {
+          "id": "10.3",
+          "title": "Register all analyzers in default registry",
+          "description": "In default-registry.ts: import and register ExpressAnalyzer(100), FastAPIAnalyzer(90), FlaskAnalyzer(80), GenericAnalyzer(0). Verify resolve() picks the right one for each framework.",
+          "status": "pending",
+          "dependencies": ["10.1", "10.2"]
+        }
+      ]
+    },
+    {
+      "id": 11,
+      "title": "Implement AST Visitors: RouteVisitor, DbCallVisitor, OutboundHttpVisitor",
+      "description": "Build the Visitor pattern from LLD Section 2.2 with CompositeVisitor.",
+      "status": "pending",
+      "dependencies": [8],
+      "priority": "medium",
+      "details": "Each visitor extracts one concern. CompositeVisitor runs all in single AST pass.",
+      "testStrategy": "Each visitor works with AST fixtures. Composite returns combined results.",
+      "subtasks": [
+        {
+          "id": "11.1",
+          "title": "Define ASTVisitor interface and VisitorContext",
+          "description": "In src/analyzer/visitors/interface.ts: Export interface ASTVisitor<T> { name: string; visit(node: Node, context: VisitorContext): T[]; }. Export interface VisitorContext { sourceFile: SourceFile; serviceName: string; filePath: string; }. The Node type comes from ts-morph.",
+          "status": "pending",
+          "dependencies": []
+        },
+        {
+          "id": "11.2",
+          "title": "Implement RouteDefinitionVisitor",
+          "description": "Class RouteDefinitionVisitor implements ASTVisitor<EndpointDefinition>. visit(node, context): If node is CallExpression and matches route patterns (app.get, router.post, etc.), extract endpoint. Reuse logic from ExpressAnalyzer 8.2/8.3 but in visitor form. Return EndpointDefinition[] for this node (usually 0 or 1).",
+          "status": "pending",
+          "dependencies": ["11.1"]
+        },
+        {
+          "id": "11.3",
+          "title": "Implement DbCallVisitor and OutboundHttpVisitor",
+          "description": "DbCallVisitor: visit() checks if node is CallExpression matching DB patterns (prisma.*, Model.find*, knex(), pool.query). Returns DbInteraction[]. OutboundHttpVisitor: visit() checks for fetch(), axios.*, http.request(). Returns OutboundCall[].",
+          "status": "pending",
+          "dependencies": ["11.1"]
+        },
+        {
+          "id": "11.4",
+          "title": "Implement CompositeVisitor for single-pass traversal",
+          "description": "Class CompositeVisitor { private visitors: ASTVisitor<any>[]. register(visitor). async analyze(sourceFile, context): use sourceFile.forEachDescendant((node, traversal) => { for each visitor, call visit(node, context) and collect results }). Return { endpoints, dbInteractions, outboundCalls } aggregated from all visitors. This avoids multiple AST traversals per file. }",
+          "status": "pending",
+          "dependencies": ["11.2", "11.3"]
+        }
+      ]
+    },
+    {
+      "id": 12,
+      "title": "Implement working.md Document Generator",
+      "description": "Build the markdown generator that produces working.md from ProjectAnalysis.",
+      "status": "pending",
+      "dependencies": [7, 8],
+      "priority": "high",
+      "details": "Structured markdown with service table, endpoint docs, dependency graph.",
+      "testStrategy": "Generated markdown is valid. All endpoints appear. JSON output parseable.",
+      "subtasks": [
+        {
+          "id": "12.1",
+          "title": "Implement service overview section generator",
+          "description": "Function generateServiceOverview(services: ServiceAnalysis[]): string. Produce: # Project Analysis header with timestamp. ## Service Overview with markdown table: | Service | Framework | Type | Endpoints | DB Tables | Port |. Row per service.",
+          "status": "pending",
+          "dependencies": []
+        },
+        {
+          "id": "12.2",
+          "title": "Implement dependency graph generator",
+          "description": "Function generateDependencyGraph(services: ServiceAnalysis[]): string. Analyze outboundCalls across services to build a dependency map. Produce a mermaid flowchart: ```mermaid\\ngraph LR\\n  auth-service --> user-db\\n  api-gateway --> auth-service\\n```. Each arrow represents an outbound call from one service to another.",
+          "status": "pending",
+          "dependencies": []
+        },
+        {
+          "id": "12.3",
+          "title": "Implement per-endpoint documentation generator",
+          "description": "Function generateEndpointDocs(service: ServiceAnalysis): string. For each endpoint: ### METHOD /path. **Auth:** JWT/None. **Request:** table of headers, query params, body fields with types and required flag. **Response:** table per status code with body schema. **DB Interactions:** table of table/operation/fields. **Outbound Calls:** list of target URLs. **Test Scenarios:** auto-generate: 'Happy path with valid payload', 'Missing auth token → 401', 'Invalid payload → 400', 'Resource not found → 404'.",
+          "status": "pending",
+          "dependencies": []
+        },
+        {
+          "id": "12.4",
+          "title": "Assemble full working.md and working.json output",
+          "description": "Function generateWorkingDoc(analysis: ProjectAnalysis): { markdown: string, json: object }. Combine all sections: overview → dependency graph → per-service endpoint docs → DB schema summary → auth flow summary. Write to .secsee/working.md and .secsee/working.json. The JSON output is the raw ProjectAnalysis for programmatic consumption by the test runner.",
+          "status": "pending",
+          "dependencies": ["12.1", "12.2", "12.3"]
+        }
+      ]
+    },
+    {
+      "id": 13,
+      "title": "Wire Up analyze_project MCP Tool & CLI Command",
+      "description": "Connect full analysis pipeline to MCP tool and CLI.",
+      "status": "pending",
+      "dependencies": [12, 4, 5],
+      "priority": "high",
+      "details": "MCP tool handler calls scanner → analyzers → doc generator. CLI mirrors this.",
+      "testStrategy": "analyze_project against sample project produces working.md.",
+      "subtasks": [
+        {
+          "id": "13.1",
+          "title": "Implement analyze_project MCP tool handler",
+          "description": "In src/server/tools/analyze-project.ts: Export async function handler. Load config, log 'Analyzing project...'. Call analyzeProject(projectRoot, defaultRegistry). Log progress per service ('Analyzing auth-service (2/5)'). Call generateWorkingDoc(analysis). Write working.md and working.json. Return { content: [{ type: 'text', text: summary }], structuredContent: { servicesFound: N, endpointsFound: N, outputPath } }.",
+          "status": "pending",
+          "dependencies": []
+        },
+        {
+          "id": "13.2",
+          "title": "Replace placeholder in mcp-server.ts with real handler",
+          "description": "In createServer(), replace the placeholder analyze_project registration with import of the real handler from tools/analyze-project.js.",
+          "status": "pending",
+          "dependencies": ["13.1"]
+        },
+        {
+          "id": "13.3",
+          "title": "Implement analyze CLI command",
+          "description": "In cli.ts, update the analyze command action: load config, call analyzeProject, call generateWorkingDoc, print summary to stdout with service count, endpoint count, and output file path. Handle errors with user-friendly messages.",
+          "status": "pending",
+          "dependencies": ["13.1"]
+        }
+      ]
+    },
+    {
+      "id": 14,
+      "title": "Implement Docker Orchestrator with State Machine",
+      "description": "Build Docker lifecycle management per LLD Section 2.4.",
+      "status": "pending",
+      "dependencies": [3],
+      "priority": "high",
+      "details": "Use dockerode + child_process for docker compose. State machine for container lifecycle.",
+      "testStrategy": "Integration test: spinUp starts containers, health checks pass, tearDown cleans up.",
+      "subtasks": [
+        {
+          "id": "14.1",
+          "title": "Implement DockerOrchestrator class with state tracking",
+          "description": "In src/docker/orchestrator.ts: Import Docker from 'dockerode', exec from 'child_process'. Class DockerOrchestrator: constructor(config: SecseeConfig). Private docker = new Docker({ socketPath: '/var/run/docker.sock' }). Private states = new Map<string, ContainerState>(). Method getStates(): returns current Map. Method private updateState(name, status): validates transition per LLD 2.4 state machine, updates Map.",
+          "status": "pending",
+          "dependencies": []
+        },
+        {
+          "id": "14.2",
+          "title": "Implement spinUp() method",
+          "description": "Method async spinUp(): (1) Resolve docker-compose path from config. (2) Exec `docker compose -f <path> up -d` via child_process.execSync or promisified exec. Capture stdout/stderr. (3) After compose up, call docker.listContainers({ all: true, filters: { label: [`com.docker.compose.project=${projectName}`] } }) to find started containers. (4) For each container, create ContainerState with status 'starting'. (5) Run health checks via HealthChecker (task 15). (6) Update states based on health check results. (7) Return ContainerStatus[] with name, status, port mappings, health.",
+          "status": "pending",
+          "dependencies": ["14.1"]
+        },
+        {
+          "id": "14.3",
+          "title": "Implement tearDown() method",
+          "description": "Method async tearDown(removeVolumes: boolean = false): Exec `docker compose -f <path> down` (add `-v` flag if removeVolumes). Update all container states to 'removed'. Return confirmation with list of removed containers.",
+          "status": "pending",
+          "dependencies": ["14.1"]
+        },
+        {
+          "id": "14.4",
+          "title": "Implement streamLogs() method",
+          "description": "Method async streamLogs(serviceName: string, onLog: (line: string) => void): Find container by name from states Map. Call container.logs({ follow: true, stdout: true, stderr: true }). Use container.modem.demuxStream(stream, stdout, stderr) to split streams. Pipe to onLog callback. Return stream handle for cleanup.",
+          "status": "pending",
+          "dependencies": ["14.1"]
+        }
+      ]
+    },
+    {
+      "id": 15,
+      "title": "Implement Docker Health Checker & Compose Parser",
+      "description": "Build health checking with retries and docker-compose.yml parser.",
+      "status": "pending",
+      "dependencies": [14],
+      "priority": "medium",
+      "details": "Poll container health with exponential backoff. Parse compose YAML for service definitions.",
+      "testStrategy": "Health checker reports healthy/unhealthy correctly. Compose parser extracts services.",
+      "subtasks": [
+        {
+          "id": "15.1",
+          "title": "Implement HealthChecker class",
+          "description": "In src/docker/health-checker.ts: Class HealthChecker. Method async waitForHealthy(container: Docker.Container, timeout: number = 30000): Promise<'healthy'|'unhealthy'|'failed'>. Poll loop: call container.inspect(). If State.Health exists, check State.Health.Status. If no Health defined, consider 'healthy' if State.Running === true and container has been running for >5s. Exponential backoff: start at 1s, double each time, max 8s. Max total wait = timeout. Return final status. Method async waitForAllHealthy(containers, timeout): Promise.allSettled for concurrent health checking. Return per-container results.",
+          "status": "pending",
+          "dependencies": []
+        },
+        {
+          "id": "15.2",
+          "title": "Implement Compose parser",
+          "description": "In src/docker/compose-parser.ts: Import yaml from 'js-yaml'. Function parseComposeFile(filePath: string): ComposeDefinition. Read file, parse YAML. Extract services with: name, image, build (context, dockerfile), ports (parse 'host:container' format), environment, depends_on, healthcheck (test, interval, timeout, retries), volumes, networks. Define ComposeDefinition type. Validate basic structure (services key must exist).",
+          "status": "pending",
+          "dependencies": []
+        },
+        {
+          "id": "15.3",
+          "title": "Implement port conflict detector",
+          "description": "Function async detectPortConflicts(composeDef: ComposeDefinition): Promise<PortConflict[]>. For each service with host port mappings, check if the port is already in use. Use net.createServer() attempt to bind — if EADDRINUSE, report conflict. Return array of { service, port, conflictWith: 'unknown process' }.",
+          "status": "pending",
+          "dependencies": ["15.2"]
+        }
+      ]
+    },
+    {
+      "id": 16,
+      "title": "Wire Up Docker MCP Tools (spin_up_services, tear_down_services)",
+      "description": "Connect DockerOrchestrator to MCP tools and CLI.",
+      "status": "pending",
+      "dependencies": [15, 4, 5],
+      "priority": "medium",
+      "details": "MCP tool handlers and CLI commands for up/down.",
+      "testStrategy": "MCP tools start/stop containers. CLI shows status table.",
+      "subtasks": [
+        {
+          "id": "16.1",
+          "title": "Implement spin_up_services tool handler",
+          "description": "In src/server/tools/spin-up-services.ts: Load config, create DockerOrchestrator, check port conflicts first, call spinUp(), log progress per container via ctx.mcpReq.log(), return container statuses.",
+          "status": "pending",
+          "dependencies": []
+        },
+        {
+          "id": "16.2",
+          "title": "Implement tear_down_services tool handler",
+          "description": "In src/server/tools/tear-down-services.ts: Create orchestrator, call tearDown(removeVolumes), return confirmation.",
+          "status": "pending",
+          "dependencies": []
+        },
+        {
+          "id": "16.3",
+          "title": "Update MCP server and CLI with real handlers",
+          "description": "Replace placeholders in mcp-server.ts. Update CLI up/down commands to call orchestrator and print formatted status table.",
+          "status": "pending",
+          "dependencies": ["16.1", "16.2"]
+        }
+      ]
+    },
+    {
+      "id": 17,
+      "title": "Implement IDbVerifier Interface & DB Verifiers",
+      "description": "Build DB verification per LLD Section 2.8: Postgres, MySQL, MongoDB.",
+      "status": "pending",
+      "dependencies": [2],
+      "priority": "medium",
+      "details": "connect/snapshot/diff/disconnect pattern. Factory to pick implementation.",
+      "testStrategy": "Integration test: insert row, snapshot before/after, diff shows insertion.",
+      "subtasks": [
+        {
+          "id": "17.1",
+          "title": "Define IDbVerifier interface and types",
+          "description": "In src/db/interface.ts: Export interface IDbVerifier with connect(connectionString), snapshot(table, filter?), diff(before, after), disconnect(). Export DbSnapshot type. Export DbDiff type with inserted, deleted, modified arrays. Export factory function createDbVerifier(config: DbConnectionConfig): IDbVerifier.",
+          "status": "pending",
+          "dependencies": []
+        },
+        {
+          "id": "17.2",
+          "title": "Implement PostgresVerifier",
+          "description": "In src/db/postgres.ts: Class PostgresVerifier implements IDbVerifier. Uses pg Client. connect(): new Client(connectionString), await client.connect(). snapshot(table, filter): build SELECT * FROM table WHERE ... query, execute, return { table, rows, timestamp }. diff(before, after): compare by primary key (first column or 'id'). Rows in after not in before → inserted. Rows in before not in after → deleted. Rows in both with different values → modified. disconnect(): client.end().",
+          "status": "pending",
+          "dependencies": ["17.1"]
+        },
+        {
+          "id": "17.3",
+          "title": "Implement MongoVerifier",
+          "description": "In src/db/mongo.ts: Uses MongoClient. connect(): MongoClient.connect(connectionString). snapshot(collection, filter): db.collection(collection).find(filter || {}).toArray(). diff(): compare by _id field. disconnect(): client.close().",
+          "status": "pending",
+          "dependencies": ["17.1"]
+        },
+        {
+          "id": "17.4",
+          "title": "Implement MySQLVerifier and factory function",
+          "description": "In src/db/mysql.ts: Uses mysql2/promise createConnection. Same snapshot/diff pattern as Postgres. In src/db/interface.ts: implement createDbVerifier factory that switches on config.type and returns appropriate implementation.",
+          "status": "pending",
+          "dependencies": ["17.1"]
+        }
+      ]
+    },
+    {
+      "id": 18,
+      "title": "Implement Validation Chain (Chain of Responsibility)",
+      "description": "Build API response validation pipeline per LLD Section 2.9.",
+      "status": "pending",
+      "dependencies": [17, 2],
+      "priority": "medium",
+      "details": "StatusCode → Headers → Body → DbState → Webhook validators chained.",
+      "testStrategy": "Each validator catches expected failures. Full chain accumulates results.",
+      "subtasks": [
+        {
+          "id": "18.1",
+          "title": "Define IValidationHandler interface and base class",
+          "description": "In src/tester/api/validators/chain.ts: Export interface IValidationHandler { setNext(handler): IValidationHandler; handle(context: ValidationContext): Promise<ValidationResult[]>; }. Export abstract class BaseValidator implements IValidationHandler: private nextHandler. setNext(handler) stores and returns handler for chaining. handle() runs this.validate() then calls next.handle() if set. Accumulates all results. Abstract validate(context): Promise<ValidationResult>.",
+          "status": "pending",
+          "dependencies": []
+        },
+        {
+          "id": "18.2",
+          "title": "Implement StatusCodeValidator and HeaderValidator",
+          "description": "StatusCodeValidator (status-code.ts): validate() checks if response.status is in endpoint.response.statusCodes[].code. Returns pass/fail with expected vs actual. HeaderValidator (headers.ts): validate() checks expected response headers (content-type matches expected, CORS headers if applicable, auth-related headers).",
+          "status": "pending",
+          "dependencies": ["18.1"]
+        },
+        {
+          "id": "18.3",
+          "title": "Implement BodySchemaValidator",
+          "description": "body-schema.ts: validate() takes the response body (parsed JSON) and the expected bodySchema from the matching status code. Recursively walks the schema: for each SchemaField, check the corresponding key exists in body (if required), check type matches. Report missing required fields, wrong types, unexpected fields. Handle nested objects and arrays via SchemaField.children.",
+          "status": "pending",
+          "dependencies": ["18.1"]
+        },
+        {
+          "id": "18.4",
+          "title": "Implement DbStateValidator",
+          "description": "db-state.ts: validate() takes dbBefore and dbAfter snapshots plus endpoint.dbInteractions. For each DbInteraction: if operation is 'create', verify diff shows at least 1 insertion. If 'update', verify at least 1 modification. If 'delete', verify at least 1 deletion. If 'read', verify no changes. Report mismatches.",
+          "status": "pending",
+          "dependencies": ["18.1"]
+        },
+        {
+          "id": "18.5",
+          "title": "Implement WebhookValidator and buildChain()",
+          "description": "webhook.ts: validate() checks if endpoint.outboundCalls were triggered. Requires a webhook listener (simple HTTP server on a random port that records incoming requests). Start listener before test, check recorded requests after. buildChain() function: creates instances of all validators, chains them in order, returns head. Export for use by test runner.",
+          "status": "pending",
+          "dependencies": ["18.2", "18.3", "18.4"]
+        }
+      ]
+    },
+    {
+      "id": 19,
+      "title": "Implement API Test Generator & Request Builder",
+      "description": "Generate test cases from ProjectAnalysis. Build HTTP requests from EndpointDefinition.",
+      "status": "pending",
+      "dependencies": [12, 2],
+      "priority": "medium",
+      "details": "Topological sort for ordering. Request builder resolves path params and auth.",
+      "testStrategy": "Test cases generated for all endpoints. Topo sort orders CREATE before READ.",
+      "subtasks": [
+        {
+          "id": "19.1",
+          "title": "Implement topological sort (Kahn's algorithm)",
+          "description": "In src/tester/api/test-generator.ts: Function topologicalSort(endpoints: EndpointDefinition[]): EndpointDefinition[]. Build adjacency list from endpoint.dependsOn. Implement Kahn's algorithm: find nodes with 0 in-degree, process them, reduce in-degree of dependents, repeat. Detect circular dependencies: if result length < input length, throw CircularDependencyError listing the cycle.",
+          "status": "pending",
+          "dependencies": []
+        },
+        {
+          "id": "19.2",
+          "title": "Implement test case generator",
+          "description": "Function generateTestCases(analysis: ProjectAnalysis): TestCase[]. For each endpoint: (1) Happy path: generate valid request with all required fields populated using example values from SchemaField or generated defaults (string→'test', number→1, boolean→true). (2) Auth failure: same but without auth header. (3) Invalid payload: send with wrong types or missing required fields. (4) Wrong method: send GET to a POST endpoint. Tag each test case with category. Topologically sort the happy path tests for execution order.",
+          "status": "pending",
+          "dependencies": ["19.1"]
+        },
+        {
+          "id": "19.3",
+          "title": "Implement request builder with context propagation",
+          "description": "In src/tester/api/request-builder.ts: Function buildRequest(testCase, context: TestContext, config): { url, method, headers, body }. Resolve path params: replace :id or {id} with context.resources[resourceType] (e.g., context.userId from a previous POST /users response). Add auth headers based on AuthScheme: JWT → 'Authorization: Bearer {context.token}', API key → custom header. Set Content-Type based on endpoint. TestContext type: { resources: Record<string, string>, token?: string }.",
+          "status": "pending",
+          "dependencies": []
+        }
+      ]
+    },
+    {
+      "id": 20,
+      "title": "Implement API Test Runner & Orchestration",
+      "description": "Build the full API test execution flow per LLD Section 5.3.",
+      "status": "pending",
+      "dependencies": [18, 19],
+      "priority": "high",
+      "details": "Topo-ordered execution with DB snapshots, validation chain, context propagation.",
+      "testStrategy": "Integration test against running Express+Postgres. CRUD cycle passes.",
+      "subtasks": [
+        {
+          "id": "20.1",
+          "title": "Implement ApiTestRunner class",
+          "description": "In src/tester/api/test-runner.ts: Class ApiTestRunner { constructor(config: SecseeConfig). Method async runAll(analysis: ProjectAnalysis): Promise<ApiTestResult[]>. Steps: (1) generateTestCases → topologically sorted. (2) Initialize TestContext. (3) Connect DB verifiers for each config.db entry. (4) Build validation chain via buildChain(). (5) Execute test loop (see 20.2). (6) Disconnect verifiers. (7) Return results. }",
+          "status": "pending",
+          "dependencies": []
+        },
+        {
+          "id": "20.2",
+          "title": "Implement test execution loop with retries",
+          "description": "For each test case: (a) Snapshot affected DB tables. (b) Build request from test case + context. (c) Execute with native fetch(), wrapped in retry(3, 1000) per LLD Section 7. Record latency via Date.now() before/after. (d) Snapshot DB after. (e) Run validation chain with full context. (f) Extract resource IDs from response (if POST and status 201, store response.body.id in context under endpoint resource type). (g) Build ApiTestResult. Handle ECONNREFUSED → mark as 'error'. Handle timeout → mark as 'error' after retries.",
+          "status": "pending",
+          "dependencies": ["20.1"]
+        },
+        {
+          "id": "20.3",
+          "title": "Implement runSingle() for targeted endpoint testing",
+          "description": "Method async runSingle(endpointPath: string, method: string, analysis): Promise<ApiTestResult>. Find the specific endpoint in analysis. Generate only its test cases. Run without topological sort (user is targeting manually). Return single result.",
+          "status": "pending",
+          "dependencies": ["20.1"]
+        }
+      ]
+    },
+    {
+      "id": 21,
+      "title": "Wire Up API Testing MCP Tools",
+      "description": "Connect ApiTestRunner to test_apis and test_single_endpoint MCP tools and CLI.",
+      "status": "pending",
+      "dependencies": [20, 4, 5],
+      "priority": "medium",
+      "details": "MCP handlers and CLI commands for API testing.",
+      "testStrategy": "MCP returns structured results. CLI prints formatted table.",
+      "subtasks": [
+        {
+          "id": "21.1",
+          "title": "Implement test_apis tool handler",
+          "description": "src/server/tools/test-apis.ts: Load config, read working.json, create ApiTestRunner, call runAll(), log progress ('Testing POST /api/users (3/12)'), return summary with pass/fail counts and full results in structuredContent.",
+          "status": "pending",
+          "dependencies": []
+        },
+        {
+          "id": "21.2",
+          "title": "Implement test_single_endpoint tool handler",
+          "description": "src/server/tools/test-single-endpoint.ts: Accept path and method params, call runSingle(), return detailed result for that one endpoint.",
+          "status": "pending",
+          "dependencies": []
+        },
+        {
+          "id": "21.3",
+          "title": "Update MCP server and CLI with real handlers",
+          "description": "Replace placeholders. CLI test:api prints colored table (chalk or similar): green ✓ for pass, red ✗ for fail. Show endpoint, status, latency, errors.",
+          "status": "pending",
+          "dependencies": ["21.1", "21.2"]
+        }
+      ]
+    },
+    {
+      "id": 22,
+      "title": "Implement URL Normalizer & Crawl State Management",
+      "description": "Build URL normalization and BFS state per LLD Section 2.5.",
+      "status": "pending",
+      "dependencies": [2],
+      "priority": "medium",
+      "details": "Normalize URLs to prevent loops. CrawlState manages queue and visited set.",
+      "testStrategy": "/dashboard/ and /dashboard normalize the same. CrawlState prevents re-visit.",
+      "subtasks": [
+        {
+          "id": "22.1",
+          "title": "Implement normalizeUrl() function",
+          "description": "In src/tester/frontend/url-normalizer.ts: Function normalizeUrl(raw, baseUrl): parse with new URL(raw, baseUrl). Strip search (url.search = ''). Strip hash (url.hash = ''). Strip trailing slash except root. Return origin + cleaned path. Function isSameOrigin(url, baseUrl): compare URL origins. Function isExcluded(url, excludePaths): check if path starts with or matches any exclude pattern. Handle relative URLs, absolute URLs, and protocol-relative URLs.",
+          "status": "pending",
+          "dependencies": []
+        },
+        {
+          "id": "22.2",
+          "title": "Implement CrawlState class",
+          "description": "Class CrawlState { queue: CrawlTarget[] = []; visited = new Set<string>(); results: PageTestResult[] = []; maxPages, maxDepth, excludePaths from config. enqueue(target): normalize URL, check !visited && !excluded && depth <= maxDepth, push to queue. dequeue(): shift from queue. isVisited(url): check normalized in visited. markVisited(url): add normalized. shouldStop(): queue.length === 0 || visited.size >= maxPages. getStats(): { visited: size, queued: length, remaining: maxPages - visited.size }. }",
+          "status": "pending",
+          "dependencies": ["22.1"]
+        }
+      ]
+    },
+    {
+      "id": 23,
+      "title": "Implement Network Monitor (Observer Pattern)",
+      "description": "Build Playwright network interception per LLD Section 2.6.",
+      "status": "pending",
+      "dependencies": [2],
+      "priority": "medium",
+      "details": "Capture all req/res via page events. Validate against API contracts.",
+      "testStrategy": "Captures requests. validateAgainstContract catches mismatches.",
+      "subtasks": [
+        {
+          "id": "23.1",
+          "title": "Implement NetworkMonitor.attach() and event handlers",
+          "description": "In src/tester/frontend/network-monitor.ts: Class NetworkMonitor. Private entries: NetworkEntry[] = []. Method attach(page: Page): page.on('request', req => push {url: req.url(), method: req.method(), headers: req.headers(), postData: req.postData(), timestamp: Date.now(), type: 'request'}). page.on('response', async res => find matching entry by url+method, attach responseStatus: res.status(), responseHeaders: res.headers(), responseBody: try { await res.json() } catch { await res.text() }). Method detach(page): remove listeners. Method clear(): reset entries.",
+          "status": "pending",
+          "dependencies": []
+        },
+        {
+          "id": "23.2",
+          "title": "Implement filtering and contract validation",
+          "description": "Method getApiEntries(): filter entries to only API requests (exclude .js, .css, .png, .jpg, .svg, .woff, .ico by URL extension, and exclude requests where response content-type is not application/json). Method getEntriesForUrl(pattern): glob-match URL against pattern. Method validateAgainstContract(contracts: EndpointDefinition[]): for each API entry, find matching contract by path pattern and method. Validate: request headers, request body vs expected schema, response status in expected codes, response body vs expected schema. Return NetworkValidationResult[].",
+          "status": "pending",
+          "dependencies": ["23.1"]
+        }
+      ]
+    },
+    {
+      "id": 24,
+      "title": "Implement Form Detector & Auth Handler",
+      "description": "Build form discovery/interaction and login detection for Playwright.",
+      "status": "pending",
+      "dependencies": [2],
+      "priority": "medium",
+      "details": "Find forms on page, fill and submit. Detect login pages, authenticate with test creds.",
+      "testStrategy": "Forms discovered and submitted. Login page detected and auth succeeds.",
+      "subtasks": [
+        {
+          "id": "24.1",
+          "title": "Implement FormDetector.detectForms()",
+          "description": "In src/tester/frontend/form-detector.ts: Method async detectForms(page: Page): Promise<FormInfo[]>. Query page.$$('form'). For each form element: get action attr, method attr. Find all input/select/textarea inside: get name, type, required, placeholder. Return FormInfo[] with form details. Handle forms without explicit action (defaults to current URL).",
+          "status": "pending",
+          "dependencies": []
+        },
+        {
+          "id": "24.2",
+          "title": "Implement fillAndSubmit() and testWithInvalidData()",
+          "description": "Method fillAndSubmit(page, form, data): for each field, use page.fill(`[name=\"${name}\"]`, value) for text inputs, page.selectOption for selects, page.check for checkboxes. Find submit button (button[type=submit] or input[type=submit]), click it. Wait for navigation or networkidle. Return FormTestResult. Method testWithInvalidData(page, form): submit with empty required fields. Check for visible validation messages on page (look for elements with 'error', 'invalid', 'required' class/text).",
+          "status": "pending",
+          "dependencies": ["24.1"]
+        },
+        {
+          "id": "24.3",
+          "title": "Implement AuthHandler",
+          "description": "In src/tester/frontend/auth-handler.ts: Class AuthHandler. Method detectLoginPage(page): check if URL contains login/signin/auth, OR if page has a form with password input (type='password'). Method async authenticate(page, credentials): find username/email input (type='email' or name matching email/username), find password input (type='password'). Fill both with credentials. Submit form. Wait for URL change (indicates successful login). Check if auth cookie or localStorage token exists after submit. Return boolean success. Store cookies in browser context for session persistence.",
+          "status": "pending",
+          "dependencies": []
+        }
+      ]
+    },
+    {
+      "id": 25,
+      "title": "Implement BFS Page Crawler for Playwright",
+      "description": "Build the full BFS crawl algorithm per LLD Section 2.5 and 5.2.",
+      "status": "pending",
+      "dependencies": [22, 23, 24],
+      "priority": "high",
+      "details": "BFS with visited set, network monitoring, form testing, auth handling, SPA support.",
+      "testStrategy": "Crawls multi-page site. All pages discovered. No loops. Auth handled.",
+      "subtasks": [
+        {
+          "id": "25.1",
+          "title": "Implement browser launch and context setup",
+          "description": "In src/tester/frontend/crawler.ts: Class PageCrawler { constructor(config, contracts). Method async crawl(frontendUrl): Launch browser via playwright[config.browser].launch({ headless: !config.headed }). Create context with viewport { width: 1280, height: 720 }. Create page. Set up console error capture: page.on('console', msg => if type==='error', collect). Initialize CrawlState with frontendUrl at depth 0. }",
+          "status": "pending",
+          "dependencies": []
+        },
+        {
+          "id": "25.2",
+          "title": "Implement main BFS crawl loop",
+          "description": "While !crawlState.shouldStop(): dequeue target. Skip if visited. Mark visited. Create NetworkMonitor, attach to page. Navigate: page.goto(target.url, { waitUntil: 'networkidle', timeout }). Catch navigation errors (timeout, network error) → screenshot, mark as error, continue. Take screenshot: page.screenshot({ path, fullPage: true }). Check for login page via AuthHandler — if detected and not yet authenticated, authenticate with config.testCredentials. Detect forms via FormDetector — test each. Discover links: page.$$eval('a[href]', els => els.map(e => ({ href: e.href, text: e.textContent }))). Also discover buttons with onclick, nav elements. For each link: if same origin and not excluded, enqueue with depth+1 and referrer=current URL. Validate network requests against contracts. Build PageTestResult. Detach monitor.",
+          "status": "pending",
+          "dependencies": ["25.1"]
+        },
+        {
+          "id": "25.3",
+          "title": "Implement SPA route detection",
+          "description": "For SPAs (React Router, Vue Router, etc.), clicking a link may not trigger a full navigation. After clicking a link: record page.url() before click. Use page.click(selector). Wait with Promise.race([page.waitForNavigation({timeout: 5000}).catch(() => null), page.waitForTimeout(3000)]). Check page.url() after — if changed, treat as new page. If URL didn't change but content did (check DOM changes), still treat as navigation. Handle hash-based routing (#/path) by including hash in normalization for SPA mode.",
+          "status": "pending",
+          "dependencies": ["25.2"]
+        },
+        {
+          "id": "25.4",
+          "title": "Implement cleanup and result aggregation",
+          "description": "After BFS loop: close page, close context, close browser. Return crawlState.results (all PageTestResult[]). Ensure cleanup happens even on error (try/finally). Log stats: pages visited, forms tested, network requests captured, errors found.",
+          "status": "pending",
+          "dependencies": ["25.2"]
+        }
+      ]
+    },
+    {
+      "id": 26,
+      "title": "Wire Up Frontend Testing MCP Tools",
+      "description": "Connect PageCrawler to MCP tools and CLI.",
+      "status": "pending",
+      "dependencies": [25, 4, 5],
+      "priority": "medium",
+      "details": "test_frontend and test_page MCP tools plus CLI commands.",
+      "testStrategy": "MCP returns page results with screenshots. CLI --headed opens browser.",
+      "subtasks": [
+        {
+          "id": "26.1",
+          "title": "Implement test_frontend tool handler",
+          "description": "src/server/tools/test-frontend.ts: Load config, read contracts from working.json, create PageCrawler, call crawl(config.frontendUrl), log progress per page, return summary with pages visited, pass/fail counts, issues found.",
+          "status": "pending",
+          "dependencies": []
+        },
+        {
+          "id": "26.2",
+          "title": "Implement test_page tool handler",
+          "description": "src/server/tools/test-page.ts: Accept url param, create crawler but only test that single URL (no BFS). Return detailed single-page result.",
+          "status": "pending",
+          "dependencies": []
+        },
+        {
+          "id": "26.3",
+          "title": "Update CLI test:ui command",
+          "description": "secsee test:ui: runs full crawl, prints per-page results. secsee test:ui --page /login: tests single page. secsee test:ui --headed: launches visible browser. Print results with colors and screenshot file paths.",
+          "status": "pending",
+          "dependencies": ["26.1", "26.2"]
+        }
+      ]
+    },
+    {
+      "id": 27,
+      "title": "Implement Report Builder & Renderers",
+      "description": "Build report generation per LLD Section 2.7.",
+      "status": "pending",
+      "dependencies": [2],
+      "priority": "medium",
+      "details": "Builder pattern with markdown and JSON renderers.",
+      "testStrategy": "Report from mock results renders valid markdown and parseable JSON.",
+      "subtasks": [
+        {
+          "id": "27.1",
+          "title": "Implement ReportBuilder class",
+          "description": "In src/report/builder.ts: Class ReportBuilder. Private report: Partial<TestReport> = {}. withSummary(pass, fail, skip, error, duration): sets summary. withApiResults(results): sets apiResults. withFrontendResults(results): sets frontendResults. withNetworkValidation(results): sets networkValidation. withScreenshots(screenshots): sets screenshots. withIssues(issues): sorts by severity, sets issues. Each returns `this`. build(): validates all required sections, returns TestReport. toMarkdown(): calls MarkdownRenderer.render(this.build()). toJson(): returns JSON.stringify(this.build(), null, 2).",
+          "status": "pending",
+          "dependencies": []
+        },
+        {
+          "id": "27.2",
+          "title": "Implement MarkdownRenderer",
+          "description": "In src/report/markdown-renderer.ts: Function render(report: TestReport): string. Sections: (1) # SecSee Test Report + timestamp. (2) ## Summary: total tests, pass ✓, fail ✗, skip ⊘, error !, duration. (3) ## API Test Results: table per service | Endpoint | Status | Latency | Errors |. For failed tests, expandable details with request/response. (4) ## Frontend Test Results: per-page sections with screenshot reference (![screenshot](path)), elements found, forms tested, console errors. (5) ## Network Validation: table of API calls captured | URL | Method | Expected Status | Actual | Match |. (6) ## Issues: ordered by severity with descriptions. Return full markdown string.",
+          "status": "pending",
+          "dependencies": []
+        },
+        {
+          "id": "27.3",
+          "title": "Implement JsonRenderer",
+          "description": "In src/report/json-renderer.ts: Function render(report: TestReport): string. Simply JSON.stringify with formatting. Ensure all dates are ISO strings. Ensure screenshot paths are relative to project root.",
+          "status": "pending",
+          "dependencies": []
+        }
+      ]
+    },
+    {
+      "id": 28,
+      "title": "Wire Up Report & Update MCP Tools",
+      "description": "Connect ReportBuilder to generate_report and update_working_doc tools.",
+      "status": "pending",
+      "dependencies": [27, 21, 26],
+      "priority": "medium",
+      "details": "MCP and CLI for report generation and working.md refresh.",
+      "testStrategy": "generate_report produces both files. update_working_doc detects changes.",
+      "subtasks": [
+        {
+          "id": "28.1",
+          "title": "Implement generate_report tool handler",
+          "description": "src/server/tools/generate-report.ts: Read cached API and frontend results from .secsee/ (written after test runs). Build report via ReportBuilder with all available data. Write to .secsee/test-report.md and .secsee/test-report.json. Return summary text.",
+          "status": "pending",
+          "dependencies": []
+        },
+        {
+          "id": "28.2",
+          "title": "Implement update_working_doc tool handler",
+          "description": "src/server/tools/update-working-doc.ts: Re-run full analysis pipeline. If previous working.json exists, diff with new analysis: report added endpoints, removed endpoints, changed schemas. Write updated files. Return diff summary.",
+          "status": "pending",
+          "dependencies": []
+        },
+        {
+          "id": "28.3",
+          "title": "Update CLI report command",
+          "description": "secsee report: read .secsee/test-report.md and print to stdout. secsee report --json: print JSON. secsee report --open: open markdown in default editor/browser.",
+          "status": "pending",
+          "dependencies": ["28.1"]
+        }
+      ]
+    },
+    {
+      "id": 29,
+      "title": "Implement Full Test Orchestration",
+      "description": "Build master orchestration: analyze → up → test APIs → test frontend → report → down.",
+      "status": "pending",
+      "dependencies": [13, 16, 21, 26, 28],
+      "priority": "high",
+      "details": "Full E2E flow with partial failure handling.",
+      "testStrategy": "Full suite runs all phases. Partial failure doesn't block subsequent phases.",
+      "subtasks": [
+        {
+          "id": "29.1",
+          "title": "Implement TestOrchestrator class",
+          "description": "In src/orchestrator.ts: Class TestOrchestrator { constructor(config). Method async runFullSuite(projectRoot): (1) Analyze → generate working.md (unless --skip-analyze and working.json exists). (2) Spin up services → wait healthy. (3) Run API tests → collect results. (4) Run frontend tests → collect results. (5) Generate combined report. (6) Tear down (unless --keep-alive). (7) Return TestReport. Each phase logs progress and handles its own errors. }",
+          "status": "pending",
+          "dependencies": []
+        },
+        {
+          "id": "29.2",
+          "title": "Implement partial failure handling",
+          "description": "If spinUp partially fails (some containers unhealthy): log warnings, continue with available services, mark unavailable endpoints as 'skip' in results. If API tests encounter errors: still proceed to frontend tests. If frontend crawl errors on some pages: continue to remaining pages. Always tear down on exit — register process.on('SIGINT', async () => { await orchestrator.tearDown(); process.exit(0); }).",
+          "status": "pending",
+          "dependencies": ["29.1"]
+        },
+        {
+          "id": "29.3",
+          "title": "Wire to MCP and CLI",
+          "description": "Add run_full_test MCP tool that calls TestOrchestrator.runFullSuite(). CLI: secsee test runs full suite. secsee test --keep-alive skips teardown. secsee test --skip-analyze uses existing working.json. secsee test --headed runs Playwright in headed mode.",
+          "status": "pending",
+          "dependencies": ["29.1", "29.2"]
+        }
+      ]
+    },
+    {
+      "id": 30,
+      "title": "Error Handling, Logging, and Progress Reporting",
+      "description": "Implement utilities per LLD Section 7: errors, retry, logging, MCP progress.",
+      "status": "pending",
+      "dependencies": [29],
+      "priority": "medium",
+      "details": "Custom errors, exponential backoff retry, structured logging, MCP notifications.",
+      "testStrategy": "Retry retries 3x. Errors carry context. Logger respects levels.",
+      "subtasks": [
+        {
+          "id": "30.1",
+          "title": "Implement custom error classes",
+          "description": "In src/utils/errors.ts: AnalyzerNotFoundError (servicePath), DockerStartupError (serviceName, stderr), HealthCheckTimeoutError (containerName, attempts), DbConnectionError (dbType, connectionString masked), CrawlLoopDetectedError (url, depth), AuthenticationFailedError (url, reason), ConfigValidationError (zodError). All extend Error with name set to class name.",
+          "status": "pending",
+          "dependencies": []
+        },
+        {
+          "id": "30.2",
+          "title": "Implement retry utility with exponential backoff",
+          "description": "In src/utils/retry.ts: async function retry<T>(fn: () => Promise<T>, opts: { maxAttempts: 3, baseDelay: 1000, maxDelay: 8000 }): Promise<T>. Loop: try fn(). On error, if attempts < max, sleep(min(baseDelay * 2^attempt, maxDelay)), retry. On final failure, throw with all attempt errors attached.",
+          "status": "pending",
+          "dependencies": []
+        },
+        {
+          "id": "30.3",
+          "title": "Implement structured logger",
+          "description": "In src/utils/logger.ts: Class Logger { level: 'debug'|'info'|'warn'|'error'. debug/info/warn/error methods. Format: [ISO timestamp] [LEVEL] [module] message. All output via console.error (stdout reserved for MCP). Support for module name passed to constructor. }",
+          "status": "pending",
+          "dependencies": []
+        },
+        {
+          "id": "30.4",
+          "title": "Add MCP progress notifications to all tool handlers",
+          "description": "In every MCP tool handler, add ctx.mcpReq.log() calls at key progress points. Format examples: 'Analyzing service: auth-service (3/7)', 'Container auth-service is healthy', 'Testing POST /api/users (12/45)', 'Crawling /dashboard (5/20 pages)', 'Generating report...'. Ensure errors return user-friendly messages, not raw stack traces.",
+          "status": "pending",
+          "dependencies": ["30.3"]
+        }
+      ]
+    },
+    {
+      "id": 31,
+      "title": "Package for npx Distribution & MCP Config Setup",
+      "description": "Finalize for npm publishing and IDE integration.",
+      "status": "pending",
+      "dependencies": [30],
+      "priority": "medium",
+      "details": "npm packaging, MCP config snippet, .gitignore, README.",
+      "testStrategy": "npm pack creates valid tarball. npx secsee --help works.",
+      "subtasks": [
+        {
+          "id": "31.1",
+          "title": "Finalize package.json for publishing",
+          "description": "Set name, version, description, keywords (mcp, testing, e2e, playwright, integration-testing), author, license (MIT), repository URL. Ensure bin points to dist/cli.js. Ensure files includes only dist/. Add prepublishOnly: npm run build. Test with npm pack and inspect tarball contents.",
+          "status": "pending",
+          "dependencies": []
+        },
+        {
+          "id": "31.2",
+          "title": "Create MCP config example for IDE integration",
+          "description": "Create examples/cursor-mcp-config.json showing the .cursor/mcp.json snippet: { \"mcpServers\": { \"secsee\": { \"command\": \"npx\", \"args\": [\"-y\", \"secsee\"] } } }. Also show Windsurf equivalent. Document in README.",
+          "status": "pending",
+          "dependencies": []
+        },
+        {
+          "id": "31.3",
+          "title": "Create comprehensive .gitignore",
+          "description": "Ensure .gitignore covers: node_modules/, dist/, .secsee/test-report.*, .secsee/screenshots/, .secsee/working.md, .secsee/working.json, .env, *.tgz, .DS_Store. Keep .secsee/config.json tracked (it's the user config).",
+          "status": "pending",
+          "dependencies": []
+        },
+        {
+          "id": "31.4",
+          "title": "Verify npx execution and end-to-end smoke test",
+          "description": "npm pack → npm install -g secsee-0.1.0.tgz → secsee --help works. npx secsee init creates config. Test against a simple sample project: create a minimal Express app with 2 routes + React frontend + docker-compose.yml. Run secsee analyze → verify working.md generated. Run secsee up → containers start. Run secsee test:api → tests execute. Run secsee test:ui → Playwright crawls. Run secsee down → cleanup. Run secsee report → report generated.",
+          "status": "pending",
+          "dependencies": ["31.1", "31.2", "31.3"]
+        }
+      ]
+    }
+  ]
+}
