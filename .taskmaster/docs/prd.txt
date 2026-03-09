@@ -1,0 +1,185 @@
+# SecSee — AI-Powered End-to-End Integration Tester (MCP Server)
+
+## Overview
+
+SecSee is an MCP (Model Context Protocol) server that provides AI-driven end-to-end integration testing for projects containing microservices and a frontend. It integrates directly into AI-powered IDEs like Cursor, allowing developers to say "test the integration" and have the system autonomously analyze, spin up, and test the entire stack.
+
+## Architecture
+
+SecSee is a Node.js/TypeScript MCP server that exposes tools to the IDE. It has three major phases:
+
+1. **Analyze Phase** — Scan the codebase, understand all services, API endpoints, DB interactions, webhooks, and generate a `working.md` document.
+2. **Backend Test Phase** — Spin up services via Docker Compose, execute API integration tests based on the analysis, validate responses, DB state changes, and webhook triggers.
+3. **Frontend Test Phase** — Launch Playwright, crawl the frontend, test all pages and flows (auth, forms, navigation), monitor network requests, and validate them against the documented API contracts.
+
+## Detailed Requirements
+
+### Phase 1: Project Scaffolding & MCP Server Setup
+
+- Initialize a Node.js/TypeScript project with proper structure.
+- Implement the MCP server using the `@modelcontextprotocol/sdk` package.
+- The MCP server should expose tools that can be called from IDEs like Cursor.
+- Set up the project so it can be run via `npx secsee` or as a global CLI install.
+- Create a configuration system (`.secsee/config.json`) for project-level settings:
+  - Docker Compose file path
+  - Frontend URL
+  - Services list
+  - DB connection strings
+  - API base URLs
+  - Excluded paths/routes
+
+### Phase 2: Codebase Analyzer & working.md Generator
+
+- **Tool: `analyze_project`**
+  - Scans the project directory to discover all microservices and the frontend.
+  - For each service, identifies:
+    - Framework used (Express, FastAPI, Spring Boot, etc.)
+    - All API endpoints (method, path, middleware)
+    - Request schema (expected headers, query params, body payload with types)
+    - Response schema (status codes, body structure)
+    - Database interactions per endpoint (which tables/collections, what CRUD operations)
+    - Webhook/event triggers (does this endpoint trigger calls to other services?)
+    - Authentication requirements (JWT, API key, session, etc.)
+    - Inter-service dependencies (which endpoints call other services)
+  - Generates a comprehensive `working.md` file structured as:
+    - Service overview table
+    - Per-service section with all endpoints documented
+    - Dependency graph (which service calls which)
+    - Database schema summary
+    - Authentication flow documentation
+    - Expected test scenarios per endpoint
+  - The analyzer should use AST parsing where possible (e.g., ts-morph for TypeScript, ast for Python) and fall back to regex/heuristic scanning for unsupported languages.
+  - Should support at minimum: Node.js/Express, Python/FastAPI, Python/Flask, Java/Spring Boot.
+
+### Phase 3: Docker Compose Management
+
+- **Tool: `spin_up_services`**
+  - Reads or generates a `docker-compose.yml` from the project root.
+  - Starts all services, databases, and the frontend.
+  - Waits for health checks to confirm all services are ready.
+  - Returns status of each container (running, health, ports).
+- **Tool: `tear_down_services`**
+  - Stops and removes all containers, networks, and volumes.
+- Should handle:
+  - Port conflict detection
+  - Container log streaming
+  - Graceful shutdown with timeout
+  - Volume cleanup options
+
+### Phase 4: Backend API Integration Tester
+
+- **Tool: `test_apis`**
+  - Uses the `working.md` analysis to generate and execute API test cases.
+  - For each endpoint:
+    - Sends the expected request (correct method, headers, auth, payload).
+    - Validates response status code, headers, and body structure.
+    - Checks DB state before and after the request (did the expected CRUD happen?).
+    - If the endpoint triggers webhooks or calls other services, validates those happened.
+    - Tests error cases (missing auth, invalid payload, wrong method).
+  - Handles test ordering (e.g., create before update before delete).
+  - Supports seeding test data before runs and cleaning up after.
+  - Generates a structured test report (JSON + human-readable markdown).
+- **Tool: `test_single_endpoint`**
+  - Tests a specific endpoint by path/method.
+  - Useful for targeted debugging.
+
+### Phase 5: Playwright Frontend Tester
+
+- **Tool: `test_frontend`**
+  - Launches Playwright (Chromium by default, configurable).
+  - Opens the frontend URL.
+  - Implements a **page crawler** with a visited-page queue:
+    - Discovers all links/buttons/navigation elements on the current page.
+    - Adds unvisited pages to a queue (BFS approach).
+    - Maintains a `Set<string>` of visited URLs to prevent infinite loops.
+    - Handles dynamic routes and SPAs (waits for navigation/route changes).
+  - On each page:
+    - Takes a screenshot.
+    - Identifies all interactive elements (forms, buttons, inputs, links).
+    - Tests form submissions (login, signup, search, etc.) with valid and invalid data.
+    - Monitors network requests via `page.on('request')` and `page.on('response')`:
+      - Captures request URL, method, headers, payload.
+      - Captures response status, headers, body.
+      - Validates these against the `working.md` API contracts.
+    - Checks for console errors and warnings.
+    - Checks for accessibility issues (basic a11y audit).
+  - Handles authentication flows:
+    - Detects login pages.
+    - Uses configured test credentials to authenticate.
+    - Maintains session across page crawl.
+  - Generates a comprehensive report:
+    - Pages visited (with screenshots).
+    - Forms tested and results.
+    - Network requests captured and validation results.
+    - Console errors found.
+    - Broken links.
+    - Visual regression baseline (optional).
+- **Tool: `test_page`**
+  - Tests a specific page/route.
+  - Useful for targeted frontend debugging.
+
+### Phase 6: Reporting & working.md Updates
+
+- **Tool: `generate_report`**
+  - Combines backend and frontend test results into a unified report.
+  - Outputs as markdown (`test-report.md`) and JSON.
+  - Includes:
+    - Summary (pass/fail counts, coverage).
+    - Per-endpoint results with request/response details.
+    - Per-page frontend results with screenshots.
+    - Network validation results.
+    - Issues found (ranked by severity).
+    - Recommendations.
+- **Tool: `update_working_doc`**
+  - Re-runs the analyzer and updates `working.md` with any changes.
+
+### Phase 7: CLI & Configuration
+
+- CLI commands that mirror MCP tools:
+  - `secsee init` — Initialize config in current project.
+  - `secsee analyze` — Run codebase analysis.
+  - `secsee up` — Spin up services.
+  - `secsee down` — Tear down services.
+  - `secsee test` — Run full test suite (backend + frontend).
+  - `secsee test:api` — Run only backend API tests.
+  - `secsee test:ui` — Run only frontend Playwright tests.
+  - `secsee report` — View latest test report.
+- Configuration file `.secsee/config.json`:
+  - `dockerComposePath`: Path to docker-compose file.
+  - `frontendUrl`: URL of the frontend when running.
+  - `services`: Array of service definitions.
+  - `testCredentials`: Auth credentials for frontend testing.
+  - `excludePaths`: Routes/paths to skip during crawl.
+  - `timeout`: Global test timeout.
+  - `browser`: Playwright browser choice.
+  - `screenshotOnFailure`: Boolean.
+  - `parallelTests`: Number of parallel test workers.
+
+## Tech Stack
+
+- **Runtime**: Node.js 20+ with TypeScript
+- **MCP SDK**: `@modelcontextprotocol/sdk`
+- **Docker**: `dockerode` for Docker API interaction
+- **HTTP Client**: `axios` or native `fetch` for API testing
+- **Browser Testing**: `playwright`
+- **AST Parsing**: `ts-morph` (TypeScript), `@babel/parser` (JavaScript), tree-sitter (multi-language)
+- **Schema Validation**: `zod` for runtime validation
+- **CLI**: `commander` or `yargs`
+- **Reporting**: Custom markdown generator + JSON output
+
+## Non-Functional Requirements
+
+- The MCP server must start in under 3 seconds.
+- Docker operations should have configurable timeouts.
+- Playwright tests should run headless by default with option for headed mode.
+- All tools should provide progress updates via MCP notifications.
+- Error messages should be descriptive and actionable.
+- The system should gracefully handle partial failures (e.g., one service fails to start).
+
+## Success Criteria
+
+1. A developer can say "analyze my project" in Cursor and get a comprehensive `working.md`.
+2. A developer can say "test the integration" and the system spins up Docker, runs API tests, crawls the frontend, and produces a report — all autonomously.
+3. The Playwright crawler visits all discoverable pages without getting stuck in loops.
+4. Network requests captured during frontend testing are validated against the documented API contracts.
+5. The test report clearly shows what passed, what failed, and why.
