@@ -1,5 +1,5 @@
 import type { ValidationContext, ValidationResult } from "../../../types/index.js";
-import { BaseValidator } from "./chain.js";
+import { BaseValidator } from "./base.js";
 
 export class HeaderValidator extends BaseValidator {
   protected async validate(

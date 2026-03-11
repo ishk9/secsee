@@ -1,12 +1,13 @@
 {
   "name": "secsee",
-  "version": "0.1.0",
+  "version": "0.1.2",
   "description": "AI-powered E2E integration tester via MCP — analyzes microservices, tests APIs, crawls frontends with Playwright",
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "bin": {
-    "secsee": "./dist/cli.js"
+    "secsee": "./dist/index.js",
+    "secsee-cli": "./dist/cli.js"
   },
   "files": [
     "dist/"
