@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "secsee": {
+      "command": "npx",
+      "args": ["-y", "secsee"]
+    }
+  }
+}

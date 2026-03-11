@@ -1,0 +1,9 @@
+src/
+.taskmaster/
+docs/
+.secsee/
+tests/
+*.test.ts
+tsconfig.json
+.gitignore
+.env

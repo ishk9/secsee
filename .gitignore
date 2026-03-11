@@ -1,0 +1,9 @@
+node_modules/
+dist/
+.secsee/test-report.*
+.secsee/screenshots/
+.secsee/working.md
+.secsee/working.json
+.env
+*.tgz
+.DS_Store

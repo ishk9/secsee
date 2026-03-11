@@ -33,7 +33,7 @@ SecSee is a Node.js/TypeScript MCP server that exposes tools to the IDE. It has 
 - **Tool: `analyze_project`**
   - Scans the project directory to discover all microservices and the frontend.
   - For each service, identifies:
-    - Framework used (Express, FastAPI, Spring Boot, etc.)
+    - Framework used (Express, Fastify, NestJS, etc. — TypeScript/Node.js only)
     - All API endpoints (method, path, middleware)
     - Request schema (expected headers, query params, body payload with types)
     - Response schema (status codes, body structure)
@@ -48,8 +48,8 @@ SecSee is a Node.js/TypeScript MCP server that exposes tools to the IDE. It has 
     - Database schema summary
     - Authentication flow documentation
     - Expected test scenarios per endpoint
-  - The analyzer should use AST parsing where possible (e.g., ts-morph for TypeScript, ast for Python) and fall back to regex/heuristic scanning for unsupported languages.
-  - Should support at minimum: Node.js/Express, Python/FastAPI, Python/Flask, Java/Spring Boot.
+  - The analyzer uses ts-morph for TypeScript/JavaScript AST parsing.
+  - Scope is Express/TypeScript only. No Python or Java support.
 
 ### Phase 3: Docker Compose Management
 
@@ -162,7 +162,7 @@ SecSee is a Node.js/TypeScript MCP server that exposes tools to the IDE. It has 
 - **Docker**: `dockerode` (connect via `new Docker({socketPath: '/var/run/docker.sock'})`, use `docker.listContainers({all:true})` for listing, `container.inspect()` for health/state, `container.logs({stdout:true, stderr:true, follow:true})` for streaming, `container.stats({stream:false})` for resource usage, `container.stop({t:10})` / `container.remove({force:true})` for cleanup)
 - **HTTP Client**: native `fetch` for API testing
 - **Browser Testing**: `playwright` (use `page.on('request', req => ...)` and `page.on('response', res => ...)` for network capture, `page.route('**/api/**', handler)` for interception, `page.screenshot()` for captures, `page.waitForResponse(urlPattern)` for sync, `page.goto(url, {waitUntil: 'networkidle'})` for navigation)
-- **AST Parsing**: `ts-morph` (use `node.getDescendantsOfKind(SyntaxKind.CallExpression)` to find route definitions like `app.get()`, `node.forEachDescendant((node, traversal) => {...})` for controlled traversal, `SourceFile.statements` / `SourceFile.fileName` for file-level info), `@babel/parser` (JavaScript fallback), `tree-sitter` (Python/Java)
+- **AST Parsing**: `ts-morph` (use `node.getDescendantsOfKind(SyntaxKind.CallExpression)` to find route definitions like `app.get()`, `node.forEachDescendant((node, traversal) => {...})` for controlled traversal, `SourceFile.statements` / `SourceFile.fileName` for file-level info)
 - **Schema Validation**: `zod` for runtime validation of config, request/response schemas, and MCP tool input/output
 - **CLI**: `commander` for CLI interface
 - **Reporting**: Custom markdown generator + JSON output

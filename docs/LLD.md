@@ -25,101 +25,58 @@
 
 ## 2. Design Patterns & Strategies
 
-### 2.1 Strategy Pattern — Framework Analyzers
+### 2.1 LLM-Driven Analysis (via IDE Agent)
 
-Each backend framework (Express, FastAPI, Flask, Spring Boot) has wildly different conventions for defining routes, middleware, and DB calls. A single monolithic analyzer would be unmaintainable.
+Code analysis is **not** done by AST parsers inside SecSee. Instead, the IDE's integrated LLM (e.g., Claude in Cursor) performs the analysis. SecSee's role is to **collect and present** source files, then **accept structured results** back from the LLM.
 
-**Strategy:** Define an `IFrameworkAnalyzer` interface. Each framework gets its own concrete implementation. The system auto-detects which strategy to use based on project markers (`package.json` → Express/Nest, `requirements.txt` → FastAPI/Flask, `pom.xml` → Spring Boot).
+**Two-step MCP flow:**
 
 ```
-IFrameworkAnalyzer
-├── ExpressAnalyzer      (ts-morph / @babel/parser)
-├── FastAPIAnalyzer      (tree-sitter-python)
-├── FlaskAnalyzer        (tree-sitter-python)
-├── SpringBootAnalyzer   (tree-sitter-java)
-└── GenericAnalyzer      (regex/heuristic fallback)
+Step 1: LLM calls analyze_project(projectRoot)
+        → SecSee scans dirs, reads source files, returns full project snapshot
+        → LLM reads the code and understands endpoints, DB calls, auth, etc.
+
+Step 2: LLM calls update_working_doc(projectRoot, analysis)
+        → SecSee receives structured JSON (services, endpoints, schemas)
+        → Writes working.md + working.json to .secsee/
 ```
+
+**Why:** The LLM is far more capable at understanding code semantics, intent, and edge cases than any static AST parser. It can handle any framework, any coding style, and any level of abstraction — without needing per-framework analyzer implementations. This also removes ts-morph, tree-sitter, and all AST-related dependencies.
 
 ```typescript
-interface IFrameworkAnalyzer {
-  detect(servicePath: string): Promise<boolean>;
-  extractEndpoints(servicePath: string): Promise<EndpointDefinition[]>;
-  extractDbInteractions(servicePath: string): Promise<DbInteraction[]>;
-  extractOutboundCalls(servicePath: string): Promise<OutboundCall[]>;
-  extractAuthScheme(servicePath: string): Promise<AuthScheme | null>;
+interface ProjectSnapshot {
+  projectRoot: string;
+  services: DiscoveredService[];    // auto-detected via package.json
+  files: CollectedFile[];            // source file contents
+  dockerCompose: string | null;
+  discoveredAt: number;
+}
+
+interface CollectedFile {
+  relativePath: string;
+  content: string;
+  sizeBytes: number;
 }
 ```
 
-**Why:** New framework support = new class, zero changes to existing code. Open/Closed Principle.
+**Future:** AST-based analyzers can be added later as an optional local fallback for users who want offline analysis without an LLM.
 
-### 2.2 Visitor Pattern — AST Traversal
+### 2.4 Docker Compose — Simple Shell Execution
 
-When walking an AST to find route definitions, DB calls, and outbound HTTP calls, we need to inspect many different node types without coupling the traversal logic to the extraction logic.
-
-**Strategy:** Implement AST visitors that walk the tree and collect specific patterns. Each visitor is responsible for one concern (routes, DB calls, HTTP calls).
+SecSee does **not** orchestrate Docker containers directly. It expects a `docker-compose.yml` to already exist in the project root. The MCP tools simply shell out to `docker compose up -d` and `docker compose down`.
 
 ```typescript
-interface ASTVisitor<T> {
-  visit(node: ASTNode, context: VisitorContext): T[];
+async function spinUp(projectRoot: string): Promise<string> {
+  // Find docker-compose.yml, exec `docker compose up -d --wait`
+  // Return stdout/stderr for the LLM to read
 }
 
-class RouteDefinitionVisitor implements ASTVisitor<EndpointDefinition> { ... }
-class DbCallVisitor implements ASTVisitor<DbInteraction> { ... }
-class OutboundHttpVisitor implements ASTVisitor<OutboundCall> { ... }
-```
-
-Multiple visitors run over the same AST in a single pass via a `CompositeVisitor` that fans out to all registered visitors — avoids parsing the file multiple times.
-
-### 2.3 Plugin Architecture — Analyzer Registry
-
-The analyzer system is plugin-based. At startup, all `IFrameworkAnalyzer` implementations register themselves with an `AnalyzerRegistry`. When asked to analyze a service directory, the registry runs detection in priority order and delegates to the first match.
-
-```typescript
-class AnalyzerRegistry {
-  private analyzers: IFrameworkAnalyzer[] = [];
-
-  register(analyzer: IFrameworkAnalyzer, priority: number): void;
-  async resolve(servicePath: string): Promise<IFrameworkAnalyzer>;
+async function tearDown(projectRoot: string, removeVolumes: boolean): Promise<string> {
+  // exec `docker compose down` (add `-v` if removeVolumes)
 }
 ```
 
-This also enables users to write custom analyzers as plugins in the future.
-
-### 2.4 State Machine — Docker Container Lifecycle
-
-Docker containers transition through well-defined states. Using an explicit state machine prevents invalid transitions (e.g., trying to health-check a container that hasn't started) and makes error recovery predictable.
-
-```
-         ┌──────────────────────────────────────┐
-         ▼                                      │
-    [NOT_CREATED] ──create──> [CREATED] ──start──> [STARTING]
-                                                      │
-                                               health check
-                                                      │
-                                    ┌────────────┬────┴────┐
-                                    ▼            ▼         ▼
-                                [HEALTHY]   [UNHEALTHY]  [FAILED]
-                                    │            │
-                                    └─────┬──────┘
-                                          │ stop
-                                          ▼
-                                      [STOPPED]
-                                          │ remove
-                                          ▼
-                                     [REMOVED]
-```
-
-```typescript
-interface ContainerState {
-  name: string;
-  status: 'not_created' | 'created' | 'starting' | 'healthy' | 'unhealthy' | 'failed' | 'stopped' | 'removed';
-  port?: number;
-  healthCheckAttempts: number;
-  error?: string;
-}
-```
-
-Transitions are driven by a `DockerOrchestrator` that manages all containers as a group and handles partial-failure recovery (e.g., if DB starts but API server fails, it tears down cleanly).
+**Why:** Users already have a working `docker-compose.yml`. There's no value in reimplementing Docker orchestration. The `--wait` flag handles health checks natively.
 
 ### 2.5 BFS Crawl with Visited Set — Playwright Page Discovery
 
@@ -389,23 +346,10 @@ secsee/
 │   │       ├── generate-report.ts
 │   │       └── update-working-doc.ts
 │   ├── analyzer/
-│   │   ├── registry.ts             # AnalyzerRegistry (plugin system)
-│   │   ├── interface.ts            # IFrameworkAnalyzer
-│   │   ├── strategies/
-│   │   │   ├── express.ts
-│   │   │   ├── fastapi.ts
-│   │   │   ├── flask.ts
-│   │   │   ├── spring-boot.ts
-│   │   │   └── generic.ts
-│   │   ├── visitors/
-│   │   │   ├── route-visitor.ts
-│   │   │   ├── db-call-visitor.ts
-│   │   │   └── outbound-http-visitor.ts
-│   │   └── working-doc-generator.ts
+│   │   ├── scanner.ts              # Project scanner & file collector
+│   │   └── working-doc-writer.ts   # Writes working.md/json from LLM output
 │   ├── docker/
-│   │   ├── orchestrator.ts         # DockerOrchestrator (state machine)
-│   │   ├── health-checker.ts
-│   │   └── compose-parser.ts
+│   │   └── compose.ts              # Shell wrappers: spinUp, tearDown, getStatus
 │   ├── tester/
 │   │   ├── api/
 │   │   │   ├── test-runner.ts      # Orchestrates API test execution
@@ -447,17 +391,21 @@ secsee/
 
 ## 5. Key Algorithms
 
-### 5.1 Service Discovery
+### 5.1 Service Discovery & File Collection
 
 ```
-for each subdir in project root:
-  if has Dockerfile → candidate service
-  detect framework:
-    package.json with "express" dep → Express
-    requirements.txt with "fastapi" → FastAPI
-    pom.xml with spring-boot parent → Spring Boot
-  run AnalyzerRegistry.resolve(path)
-  extract endpoints, db calls, outbound calls
+for each subdir in project root (max depth 3):
+  skip: node_modules, .git, dist, build, etc.
+  if has package.json → detect framework from deps
+    express, fastify, nestjs → backend
+    react, vue, next, angular → frontend
+  collect all source files (.ts, .tsx, .js, .jsx, package.json, Dockerfile, tsconfig.json)
+  skip files > 100KB
+  enrich with docker-compose.yml port mappings
+
+return ProjectSnapshot { services, files, dockerCompose }
+→ IDE LLM analyzes the returned files
+→ LLM calls update_working_doc with structured results
 ```
 
 ### 5.2 Crawler BFS
